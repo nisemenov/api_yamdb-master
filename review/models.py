@@ -12,7 +12,7 @@ class Review(models.Model):
         on_delete=models.CASCADE,
         related_name='review'
     )
-    title_id = models.ForeignKey(
+    title = models.ForeignKey(
         'Title',
         on_delete=models.CASCADE,
         related_name='review'
@@ -33,13 +33,9 @@ class Title(models.Model):
         blank=True,
         related_name='title'
     )
-    genre = models.ForeignKey(
-        'Genre',
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='title'
-    )
+
+    def __str__(self):
+        return self.name
 
 
 class Comment(models.Model):
@@ -50,11 +46,14 @@ class Comment(models.Model):
         related_name='comment'
     )
     pub_date = models.DateTimeField('Publication date', auto_now_add=True)
-    review_id = models.ForeignKey(
+    review = models.ForeignKey(
         Review,
         on_delete=models.CASCADE,
         related_name='comment'
     )
+
+    def __str__(self):
+        return self.text
 
 
 class Category(models.Model):
@@ -71,3 +70,16 @@ class Genre(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class GenreTitle(models.Model):
+    genre = models.ForeignKey(
+        Genre,
+        on_delete=models.CASCADE,
+        related_name='genre_title'
+    )
+    title = models.ForeignKey(
+        Title,
+        on_delete=models.CASCADE,
+        related_name='genre_title'
+    )
