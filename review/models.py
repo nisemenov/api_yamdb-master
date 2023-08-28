@@ -33,6 +33,10 @@ class Title(models.Model):
         blank=True,
         related_name='title'
     )
+    genre = models.ManyToManyField(
+        'Genre',
+        related_name='title'
+    )
 
     def __str__(self):
         return self.name
@@ -70,16 +74,3 @@ class Genre(models.Model):
 
     def __str__(self):
         return self.name
-
-
-class GenreTitle(models.Model):
-    genre = models.ForeignKey(
-        Genre,
-        on_delete=models.CASCADE,
-        related_name='genre_title'
-    )
-    title = models.ForeignKey(
-        Title,
-        on_delete=models.CASCADE,
-        related_name='genre_title'
-    )
