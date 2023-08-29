@@ -24,6 +24,7 @@ from rest_framework_simplejwt.views import (
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/v1/', include('review.urls')),
+    path('api/v1/', include('users.urls')),
     path('redoc/', TemplateView.as_view(template_name='redoc.html'),
          name='redoc'),
     path('api/v1/token/', TokenObtainPairView.as_view(),
