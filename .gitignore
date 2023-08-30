@@ -1,5 +1,6 @@
 .git/*
 env/
+.env
 venv/
 
 __pycache__/
@@ -17,3 +18,5 @@ __pycache__/
 media/
 
 db.sqlite3
+
+migrations/
