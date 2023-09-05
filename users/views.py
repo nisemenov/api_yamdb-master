@@ -1,7 +1,7 @@
 from django.shortcuts import get_object_or_404
 from django.utils.datastructures import MultiValueDictKeyError
 from rest_framework import status
-from rest_framework import viewsets, permissions
+from rest_framework import viewsets, permissions, filters
 
 from users.models import User, UserBio
 from users.serializers import UserSerializer
@@ -14,6 +14,8 @@ from django.core.exceptions import ObjectDoesNotExist
 from random import randint as ri
 
 from rest_framework_simplejwt.tokens import RefreshToken
+
+from django_filters.rest_framework import DjangoFilterBackend
 
 
 def get_tokens_for_user(user):
@@ -28,6 +30,15 @@ class UsersViewSet(viewsets.ModelViewSet):
     serializer_class = UserSerializer
     permission_classes = (IsSuperuser,)
     lookup_field = 'username'
+    filter_backends = [
+        DjangoFilterBackend,
+        filters.OrderingFilter,
+        filters.SearchFilter
+    ]
+    filterset_fields = ['username']
+    search_fields = ['username']
+    ordering_fields = ['username']
+    ordering = ['username']
 
     def get_object(self):
         if self.kwargs['username'] == 'me':
@@ -39,20 +50,16 @@ class UsersViewSet(viewsets.ModelViewSet):
 @permission_classes((permissions.AllowAny,))
 def send_confirmation(request):
     try:
-        email = request.query_params['email']
+        email = request.data['email']
         user = get_object_or_404(
             User,
             email=email
         )
-    except MultiValueDictKeyError:
+    except KeyError:
         return Response(
-            {'This field is required': 'email'},
+            {'email': 'This field is required'},
             status=status.HTTP_400_BAD_REQUEST
         )
-    try:
-        user.userbio
-    except ObjectDoesNotExist:
-        UserBio.objects.create(user=user)
     if user.userbio.confirmation_code:
         send_mail(
             'Confirmation code YaMBd',
@@ -66,7 +73,7 @@ def send_confirmation(request):
             {'email': email},
             status=status.HTTP_200_OK
         )
-    confirmation_code = ri(0, 99999999)
+    confirmation_code = ri(100000, 99999999)
     user.userbio.confirmation_code = confirmation_code
     user.userbio.save()
     send_mail(
@@ -88,13 +95,13 @@ def send_token(request):
     try:
         user = get_object_or_404(
             User,
-            email=request.query_params['email'],
+            email=request.data['email'],
             userbio__confirmation_code=
-            request.query_params['confirmation_code']
+            request.data['confirmation_code']
         )
         return Response({'token': get_tokens_for_user(user)['access']})
-    except MultiValueDictKeyError as e:
+    except KeyError as e:
         return Response(
-            f'You forgot this field: {e}',
+            {'error': f'{e} field is required'},
             status=status.HTTP_400_BAD_REQUEST
         )
