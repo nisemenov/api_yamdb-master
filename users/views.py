@@ -1,21 +1,19 @@
 from django.shortcuts import get_object_or_404
-from django.utils.datastructures import MultiValueDictKeyError
-from rest_framework import status
-from rest_framework import viewsets, permissions, filters
-
-from users.models import User, UserBio
-from users.serializers import UserSerializer
-from users.permissions import IsSuperuser
-
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.response import Response
 from django.core.mail import send_mail
-from django.core.exceptions import ObjectDoesNotExist
-from random import randint as ri
+
+from django_filters.rest_framework import DjangoFilterBackend
+
+from rest_framework import viewsets, permissions, filters, status
+from rest_framework.response import Response
+from rest_framework.decorators import api_view, permission_classes
 
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from django_filters.rest_framework import DjangoFilterBackend
+from users.models import User
+from users.serializers import UserSerializer
+from users.permissions import IsSuperuserOrOwner
+
+from random import randint as ri
 
 
 def get_tokens_for_user(user):
@@ -28,7 +26,7 @@ def get_tokens_for_user(user):
 class UsersViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = (IsSuperuser,)
+    permission_classes = (IsSuperuserOrOwner,)
     lookup_field = 'username'
     filter_backends = [
         DjangoFilterBackend,

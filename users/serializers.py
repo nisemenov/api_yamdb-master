@@ -23,7 +23,7 @@ class UserSerializer(serializers.ModelSerializer):
         return value
 
     def create(self, validated_data):
-        user_bio_data = validated_data.pop('userbio', {})
+        userbio_data = validated_data.pop('userbio', {})
         user = User.objects.create_user(
             first_name=validated_data.get('first_name', ''),
             last_name=validated_data.get('last_name', ''),
@@ -32,8 +32,8 @@ class UserSerializer(serializers.ModelSerializer):
         )
         UserBio.objects.create(
             user=user,
-            bio=user_bio_data.get('bio', ''),
-            role=user_bio_data.get('role', 'user')
+            bio=userbio_data.get('bio', ''),
+            role=userbio_data.get('role', 'user')
         )
         if user.userbio.role == 'moderator':
             user.is_staff = True
@@ -43,3 +43,42 @@ class UserSerializer(serializers.ModelSerializer):
             user.is_staff = True
             user.save()
         return user
+
+    def update(self, instance, validated_data):
+        userbio_data = validated_data.pop('userbio', {})
+        userbio = instance.userbio
+        if 'username' not in validated_data:
+            raise serializers.ValidationError(
+                {'username': 'This field is required for PATCH requests.'})
+        elif 'email' not in validated_data:
+            raise serializers.ValidationError(
+                {'email': 'This field is required for PATCH requests.'})
+        instance.first_name = validated_data.get(
+            'first_name',
+            instance.first_name
+        )
+        instance.last_name = validated_data.get(
+            'last_name',
+            instance.last_name
+        )
+        instance.email = validated_data['email']
+        instance.username = validated_data['username']
+        instance.save()
+
+        userbio.bio = userbio_data.get(
+            'bio',
+            userbio.bio
+        )
+        userbio.role = userbio_data.get(
+            'role',
+            userbio.role
+        )
+        userbio.save()
+        if userbio.role == 'moderator':
+            instance.is_staff = True
+            instance.save()
+        elif userbio.role == 'admin':
+            instance.is_superuser = True
+            instance.is_staff = True
+            instance.save()
+        return instance
