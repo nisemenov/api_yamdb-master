@@ -1,6 +1,8 @@
 from django.shortcuts import get_object_or_404
 from rest_framework import viewsets, permissions, filters
 
+from django_filters.rest_framework import DjangoFilterBackend
+
 from review.models import Review, Comment, Title, Genre, Category
 from review.serializers import (
     ReviewSerializer,
@@ -10,6 +12,7 @@ from review.serializers import (
     CategorySerializer
 )
 from review.permissions import IsSuperuserOrRead
+from review.filters import TitleFilter
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
@@ -44,12 +47,17 @@ class TitleViewSet(viewsets.ModelViewSet):
     queryset = Title.objects.all()
     serializer_class = TitleSerializer
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = TitleFilter
 
 
 class GenreViewSet(viewsets.ModelViewSet):
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
-    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
+    permission_classes = (IsSuperuserOrRead,)
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['name']
+    lookup_field = 'slug'
 
 
 class CategoryViewSet(viewsets.ModelViewSet):
