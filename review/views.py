@@ -7,7 +7,8 @@ from review.models import Review, Comment, Title, Genre, Category
 from review.serializers import (
     ReviewSerializer,
     CommentSerializer,
-    TitleSerializer,
+    TitleSerializerList,
+    TitleSerializerDetail,
     GenreSerializer,
     CategorySerializer
 )
@@ -45,10 +46,16 @@ class CommentViewSet(viewsets.ModelViewSet):
 
 class TitleViewSet(viewsets.ModelViewSet):
     queryset = Title.objects.all()
-    serializer_class = TitleSerializer
-    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
-    filter_backends = [DjangoFilterBackend]
+    permission_classes = (IsSuperuserOrRead,)
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
     filterset_class = TitleFilter
+    ordering_field = ['id', 'name']
+    ordering = ['-id']
+
+    def get_serializer_class(self):
+        if self.request.method in permissions.SAFE_METHODS:
+            return TitleSerializerList
+        return TitleSerializerDetail
 
 
 class GenreViewSet(viewsets.ModelViewSet):
