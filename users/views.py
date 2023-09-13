@@ -43,6 +43,11 @@ class UsersViewSet(viewsets.ModelViewSet):
             return self.request.user
         return super().get_object()
 
+    def destroy(self, request, *args, **kwargs):
+        if self.kwargs['username'] == 'me':
+            return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        return super().destroy(request)
+
 
 @api_view(['POST'])
 @permission_classes((permissions.AllowAny,))

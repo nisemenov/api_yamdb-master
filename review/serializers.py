@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from review.models import Review, Comment, Title, Genre, Category
-from django.db.models import Avg
+from django.db.models import Avg, Q
 
 
 class ReviewSerializer(serializers.ModelSerializer):
@@ -24,11 +24,29 @@ class CategorySerializer(serializers.ModelSerializer):
         fields = ('name', 'slug')
         model = Category
 
+    def create(self, validated_data):
+        name = validated_data.get('name', '')
+        slug = validated_data.get('slug', '')
+        if Category.objects.filter(Q(name=name) | Q(slug=slug)).exists():
+            raise serializers.ValidationError(
+                'This category already exists.'
+            )
+        return super().create(validated_data)
+
 
 class GenreSerializer(serializers.ModelSerializer):
     class Meta:
         fields = ('name', 'slug')
         model = Genre
+
+    def create(self, validated_data):
+        name = validated_data.get('name', '')
+        slug = validated_data.get('slug', '')
+        if Genre.objects.filter(Q(name=name) | Q(slug=slug)).exists():
+            raise serializers.ValidationError(
+                'This genre already exists.'
+            )
+        return super().create(validated_data)
 
 
 class TitleSerializerList(serializers.ModelSerializer):
@@ -47,7 +65,7 @@ class TitleSerializerList(serializers.ModelSerializer):
         avg_rating = (obj.review.aggregate(Avg('score'))['score__avg'])
         if avg_rating is not None:
             return round(avg_rating, 2)
-        return 0
+        return None
 
 
 class TitleSerializerDetail(TitleSerializerList):
