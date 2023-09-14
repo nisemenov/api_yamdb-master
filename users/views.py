@@ -1,19 +1,17 @@
 from django.shortcuts import get_object_or_404
-from django.core.mail import send_mail
+from django.contrib.auth.tokens import default_token_generator as dtg
 
 from django_filters.rest_framework import DjangoFilterBackend
 
 from rest_framework import viewsets, permissions, filters, status
 from rest_framework.response import Response
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.views import APIView
 
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from users.models import User
 from users.serializers import UserSerializer
 from users.permissions import IsSuperuserOrOwner
-
-from random import randint as ri
 
 
 def get_tokens_for_user(user):
@@ -26,7 +24,7 @@ def get_tokens_for_user(user):
 class UsersViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = (IsSuperuserOrOwner,)
+    permission_classes = (permissions.IsAuthenticated, IsSuperuserOrOwner)
     lookup_field = 'username'
     filter_backends = [
         DjangoFilterBackend,
@@ -49,62 +47,45 @@ class UsersViewSet(viewsets.ModelViewSet):
         return super().destroy(request)
 
 
-@api_view(['POST'])
-@permission_classes((permissions.AllowAny,))
-def send_confirmation(request):
-    try:
-        email = request.data['email']
-        user = get_object_or_404(
-            User,
-            email=email
+class SendConfirmationCode(APIView):
+    def post(self, request):
+        email = request.data.get('email', None)
+        if User.objects.filter(email=email).exists():
+            user = User.objects.get(email=email)
+            user.email_user(
+                'Confirmation code YaMBd',
+                f"You've already logged into YaMBd, "
+                f"this is your new confirmation code:\n"
+                f"{dtg.make_token(user)}."
+            )
+            return Response({'email': email},
+                            status=status.HTTP_201_CREATED)
+
+        serializer = UserSerializer(data={
+            'email': request.data.get('email', None),
+            'username': request.data.get('email', None)
+        }
         )
-    except KeyError:
-        return Response(
-            {'email': 'This field is required'},
-            status=status.HTTP_400_BAD_REQUEST
-        )
-    if user.userbio.confirmation_code:
-        send_mail(
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        user = serializer.instance
+        user.email_user(
             'Confirmation code YaMBd',
-            f"You've already logged into YaMBd, "
-            f"this is your confirmation code:\n "
-            f"{user.userbio.confirmation_code}.",
-            None,
-            [email, ]
+            f"You've just logged into YaMBd, this is your confirmation code:\n"
+            f"{dtg.make_token(user)}."
         )
-        return Response(
-            {'email': email},
-            status=status.HTTP_200_OK
-        )
-    confirmation_code = ri(100000, 99999999)
-    user.userbio.confirmation_code = confirmation_code
-    user.userbio.save()
-    send_mail(
-        'Confirmation code YaMBd',
-        f"You've just logged into YaMBd, this is your confirmation code:\n "
-        f"{confirmation_code}.",
-        None,
-        [email, ]
-    )
-    return Response(
-            {'email': email},
-            status=status.HTTP_200_OK
-        )
+        return Response({'email': email}, status=status.HTTP_201_CREATED)
 
 
-@api_view(['POST'])
-@permission_classes((permissions.AllowAny,))
-def send_token(request):
-    try:
-        user = get_object_or_404(
-            User,
-            email=request.data['email'],
-            userbio__confirmation_code=
-            request.data['confirmation_code']
-        )
-        return Response({'token': get_tokens_for_user(user)['access']})
-    except KeyError as e:
+class SendToken(APIView):
+    def post(self, request):
+        email = request.data.get('email', None)
+        confirmation_code = request.data.get('confirmation_code', None)
+        user = get_object_or_404(User, email=email)
+        if dtg.check_token(user, confirmation_code):
+            return Response({'token': get_tokens_for_user(user)['access']},
+                            status=status.HTTP_200_OK)
         return Response(
-            {'error': f'{e} field is required'},
+            'Confirmation code is not valid.',
             status=status.HTTP_400_BAD_REQUEST
         )
