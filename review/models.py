@@ -21,7 +21,7 @@ class Review(models.Model):
 
 
 class Title(models.Model):
-    name = models.CharField(max_length=200)
+    name = models.CharField(max_length=100)
     year = models.IntegerField(null=True, blank=True)
     category = models.ForeignKey(
         'Category',

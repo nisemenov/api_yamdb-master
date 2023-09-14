@@ -46,7 +46,8 @@ class CommentViewSet(viewsets.ModelViewSet):
 
 class TitleViewSet(viewsets.ModelViewSet):
     queryset = Title.objects.all()
-    permission_classes = (IsSuperuserOrRead,)
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,
+                          IsSuperuserOrRead)
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
     filterset_class = TitleFilter
     ordering_field = ['id', 'name']
@@ -61,7 +62,8 @@ class TitleViewSet(viewsets.ModelViewSet):
 class GenreViewSet(viewsets.ModelViewSet):
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
-    permission_classes = (IsSuperuserOrRead,)
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,
+                          IsSuperuserOrRead)
     filter_backends = [filters.SearchFilter]
     search_fields = ['name']
     lookup_field = 'slug'
@@ -70,7 +72,8 @@ class GenreViewSet(viewsets.ModelViewSet):
 class CategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
-    permission_classes = (IsSuperuserOrRead,)
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,
+                          IsSuperuserOrRead)
     filter_backends = [filters.SearchFilter]
     search_fields = ['name']
     lookup_field = 'slug'
