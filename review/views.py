@@ -12,22 +12,25 @@ from review.serializers import (
     GenreSerializer,
     CategorySerializer
 )
-from review.permissions import IsSuperuserOrRead
+from review.permissions import IsSuperuserOrRead, IsOwnerOrReadOnly
 from review.filters import TitleFilter
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
     queryset = Review.objects.all()
     serializer_class = ReviewSerializer
-    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
+    permission_classes = (
+        permissions.IsAuthenticatedOrReadOnly,
+        IsOwnerOrReadOnly
+    )
 
     def get_queryset(self):
         title = get_object_or_404(Title, pk=self.kwargs.get('title_id'))
-        return title.review
+        return title.review.all()
 
-    # permission_classes = (IsOwnerObj,)
-    # filter_backends = (DjangoFilterBackend,)
-    # filterset_fields = ('group',)
+    def perform_create(self, serializer):
+        title = get_object_or_404(Title, pk=self.kwargs.get('title_id'))
+        serializer.save(author=self.request.user, title=title)
 
 
 class CommentViewSet(viewsets.ModelViewSet):

@@ -21,7 +21,12 @@ class UserManager(BaseUserManager):
 
 class User(AbstractUser):
     bio = models.CharField(max_length=250, blank=True)
-    email = models.EmailField(unique=True)
+    email = models.EmailField(
+        error_messages={
+            'unique': 'A user with that email already exists.',
+        },
+        unique=True
+    )
 
     objects = UserManager()
 

@@ -1,14 +1,27 @@
 from rest_framework import serializers
+from rest_framework.validators import UniqueTogetherValidator
 from review.models import Review, Comment, Title, Genre, Category
 from django.db.models import Avg, Q
 
 
 class ReviewSerializer(serializers.ModelSerializer):
     author = serializers.ReadOnlyField(source='author.username')
+    score = serializers.IntegerField(min_value=1, max_value=10)
 
     class Meta:
         fields = ('id', 'text', 'author', 'score', 'pub_date')
         model = Review
+
+    def create(self, validated_data):
+        user = self.context['request'].user
+        title_id = self.context['view'].kwargs.get('title_id')
+        if Review.objects.filter(
+            author=user,
+            title=Title.objects.get(id=title_id)
+        ).exists():
+            raise serializers.ValidationError('You have already created such '
+                                              'review.')
+        return super().create(validated_data)
 
 
 class CommentSerializer(serializers.ModelSerializer):
@@ -24,29 +37,11 @@ class CategorySerializer(serializers.ModelSerializer):
         fields = ('name', 'slug')
         model = Category
 
-    def create(self, validated_data):
-        name = validated_data.get('name', '')
-        slug = validated_data.get('slug', '')
-        if Category.objects.filter(Q(name=name) | Q(slug=slug)).exists():
-            raise serializers.ValidationError(
-                'This category already exists.'
-            )
-        return super().create(validated_data)
-
 
 class GenreSerializer(serializers.ModelSerializer):
     class Meta:
         fields = ('name', 'slug')
         model = Genre
-
-    def create(self, validated_data):
-        name = validated_data.get('name', '')
-        slug = validated_data.get('slug', '')
-        if Genre.objects.filter(Q(name=name) | Q(slug=slug)).exists():
-            raise serializers.ValidationError(
-                'This genre already exists.'
-            )
-        return super().create(validated_data)
 
 
 class TitleSerializerList(serializers.ModelSerializer):
