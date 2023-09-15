@@ -23,6 +23,9 @@ class ReviewViewSet(viewsets.ModelViewSet):
         permissions.IsAuthenticatedOrReadOnly,
         IsOwnerOrReadOnly
     )
+    filter_backends = [filters.OrderingFilter]
+    ordering_field = ['id']
+    ordering = ['id']
 
     def get_queryset(self):
         title = get_object_or_404(Title, pk=self.kwargs.get('title_id'))
@@ -36,15 +39,25 @@ class ReviewViewSet(viewsets.ModelViewSet):
 class CommentViewSet(viewsets.ModelViewSet):
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
-    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
+    permission_classes = (
+        permissions.IsAuthenticatedOrReadOnly,
+        IsOwnerOrReadOnly
+    )
+    filter_backends = [filters.OrderingFilter]
+    ordering_field = ['id']
+    ordering = ['id']
 
     def get_queryset(self):
         title = get_object_or_404(Title, pk=self.kwargs.get('title_id'))
         review = get_object_or_404(
-            title.review,
+            title.review.all(),
             pk=self.kwargs.get('review_id')
         )
-        return review.comment
+        return review.comment.all()
+
+    def perform_create(self, serializer):
+        review = get_object_or_404(Review, pk=self.kwargs.get('review_id'))
+        serializer.save(author=self.request.user, review=review)
 
 
 class TitleViewSet(viewsets.ModelViewSet):
@@ -67,9 +80,11 @@ class GenreViewSet(viewsets.ModelViewSet):
     serializer_class = GenreSerializer
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,
                           IsSuperuserOrRead)
-    filter_backends = [filters.SearchFilter]
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['name']
     lookup_field = 'slug'
+    ordering_field = ['id']
+    ordering = ['id']
 
 
 class CategoryViewSet(viewsets.ModelViewSet):
@@ -77,6 +92,8 @@ class CategoryViewSet(viewsets.ModelViewSet):
     serializer_class = CategorySerializer
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,
                           IsSuperuserOrRead)
-    filter_backends = [filters.SearchFilter]
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['name']
     lookup_field = 'slug'
+    ordering_field = ['id']
+    ordering = ['id']

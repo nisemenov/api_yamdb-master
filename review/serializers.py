@@ -1,7 +1,6 @@
 from rest_framework import serializers
-from rest_framework.validators import UniqueTogetherValidator
 from review.models import Review, Comment, Title, Genre, Category
-from django.db.models import Avg, Q
+from django.db.models import Avg
 
 
 class ReviewSerializer(serializers.ModelSerializer):
