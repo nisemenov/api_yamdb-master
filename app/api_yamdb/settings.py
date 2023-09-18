@@ -23,12 +23,14 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # See https://docs.djangoproject.com/en/3.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'p&l%385148kslhtyn^##a1)ilz@4zqj=rq&agdol^##zgl9(vs'
+SECRET_KEY = os.environ.get('SECRET_KEY', default='1')
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = int(os.environ.get('DEBUG', default=0))
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = os.environ.get(
+    'ALLOWED_HOSTS',
+    default='localhost 127.0.0.1'
+).split()
 
 # Application definition
 
@@ -80,12 +82,24 @@ WSGI_APPLICATION = 'api_yamdb.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/3.0/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+if not DEBUG:
+    DATABASES = {
+        'default': {
+            'ENGINE': os.getenv('DB_ENGINE', default='django.db.backends.postgresql'),
+            'NAME': os.getenv('DB_NAME', default='postgres'),
+            'USER': os.getenv('POSTGRES_USER', default='postgres'),
+            'PASSWORD': os.getenv('POSTGRES_PASSWORD', default='postgres'),
+            'HOST': os.getenv('DB_HOST', default='db'),
+            'PORT': os.getenv('DB_PORT', default='5432')
+        }
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        }
+    }
 
 # Password validation
 # https://docs.djangoproject.com/en/3.0/ref/settings/#auth-password-validators
@@ -143,7 +157,7 @@ EMAIL_HOST_USER = os.getenv('YA_USER')
 EMAIL_HOST_PASSWORD = os.getenv('YA_PASSWORD')
 EMAIL_PORT = 465
 EMAIL_USE_SSL = True
-DEFAULT_FROM_EMAIL = 'rastirein@yandex.ru'
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL')
 
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=180),
