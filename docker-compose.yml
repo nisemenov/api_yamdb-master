@@ -1,0 +1,42 @@
+version: '3'
+
+services:
+  db:
+    image: postgres:alpine
+    container_name: db
+    restart: always
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    env_file: .env
+
+  web:
+    build: ./app
+    container_name: web
+    restart: always
+    expose:
+      - 8000
+    depends_on:
+      - db
+    env_file: .env
+    environment:
+      DEBUG: 0
+      DB_HOST: db
+      DB_PORT: 5432
+    volumes:
+      - ./app/static:/app/static
+
+  nginx:
+    image: nginx
+    container_name: nginx
+    restart: always
+    volumes:
+      - ./app/static:/app/static
+      - ./nginx:/etc/nginx/conf.d
+    ports:
+      - "8000:80"
+    depends_on:
+      - web
+
+volumes:
+  postgres_data:
+  static:
