@@ -148,5 +148,6 @@ python manage.py flush
 * [Django](https://www.djangoproject.com/)
 * [Django REST framework](https://www.django-rest-framework.org/)
 * [PostgreSQL](https://www.postgresql.org/)
-* [nginx](https://nginx.org/ru/)
 * [Docker](https://www.docker.com/)
+* [nginx](https://nginx.org/ru/)
+* [gunicorn](https://gunicorn.org/)
